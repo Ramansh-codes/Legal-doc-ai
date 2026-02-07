@@ -1,0 +1,10 @@
+datasets
+numpy
+pandas
+sentence-transformers
+faiss-cpu
+fastapi
+uvicorn
+openai
+accelerate
+bitsandbytes
