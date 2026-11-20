@@ -1,21 +1,31 @@
-import google.generativeai as genai
-from dotenv import load_dotenv
-import os
+from app import config
 
-load_dotenv()
+NOT_FOUND = "Not found in the provided documents."
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+_model = None
 
-model = genai.GenerativeModel("gemini-3-flash-preview")
 
-def generate_answer(question, chunks):
-    context = "\n\n".join(chunks)
+def _get_model():
+    """Configure Gemini lazily so importing this module never needs a key."""
+    global _model
+    if _model is None:
+        if not config.GEMINI_API_KEY:
+            raise RuntimeError("GEMINI_API_KEY is not set (see .env.example).")
+        import google.generativeai as genai
 
-    prompt = f"""
-You are a legal assistant.
+        genai.configure(api_key=config.GEMINI_API_KEY)
+        _model = genai.GenerativeModel(config.GEMINI_MODEL)
+    return _model
 
-Answer the question ONLY using the context below.
-If the answer is not present, say "Not found in the provided document."
+
+def build_prompt(question, chunks):
+    """chunks: list of dicts with 'text' (and optionally doc_id/chunk_id)."""
+    context = "\n\n".join(f"[{n}] {c['text']}" for n, c in enumerate(chunks, 1))
+    return f"""You are a legal assistant.
+
+Answer the question ONLY using the numbered context passages below.
+After each claim, cite the passage(s) it came from like [1] or [2][3].
+If the answer is not present in the passages, reply exactly: "{NOT_FOUND}"
 
 Context:
 {context}
@@ -26,5 +36,7 @@ Question:
 Answer:
 """
 
-    response = model.generate_content(prompt)
+
+def generate_answer(question, chunks):
+    response = _get_model().generate_content(build_prompt(question, chunks))
     return response.text.strip()

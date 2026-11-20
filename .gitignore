@@ -17,10 +17,6 @@ D:/phi3/
 models/
 *.safetensors
 
-# FAISS index & generated data
-data/*.index
-data/*.json
-
 # VS Code
 .vscode/
 
@@ -30,3 +26,5 @@ Thumbs.db
 
 #notebook 
 notebooks/
+
+offload/  

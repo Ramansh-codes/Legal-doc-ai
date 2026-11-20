@@ -1,74 +1,41 @@
-# Legal Document Q&A System (RAG-based)
+# Legal Document Q&A (RAG)
 
-A Retrieval-Augmented Generation (RAG) system that answers legal questions
-using Indian legal judgments.
+Retrieval-Augmented Generation over legal judgments: documents are cleaned,
+chunked, embedded (Sentence Transformers), indexed in FAISS, and answered by
+Gemini using only the retrieved passages, with numbered source citations.
 
----
+## Pipeline
+1. Load judgments (Hugging Face dataset) and clean text
+2. Chunk into overlapping word windows (metadata: doc_id, chunk_id)
+3. Embed with `all-MiniLM-L6-v2` (normalised vectors)
+4. Store in a FAISS inner-product (cosine) index
+5. At query time: embed question -> top-k chunks -> Gemini answers with citations `[1]`, `[2]`
 
-## 🚀 Features
-- Legal document loading & cleaning
-- Text chunking
-- Semantic embeddings (Sentence Transformers)
-- Vector search using FAISS
-- Answer generation using **Gemini API**
-
----
-
-## 🧠 Architecture
-1. Documents are split into chunks  
-2. Chunks are embedded into vectors  
-3. FAISS index stores embeddings  
-4. User query is embedded  
-5. Top-k relevant chunks are retrieved  
-6. Gemini generates a grounded answer  
-
----
-
-## 📂 Project Structure
-
-```text
-legal-doc-ai/
-│
-├── app/
-│   ├── data_loader.py
-│   ├── cleaner.py
-│   ├── chunker.py
-│   ├── embedder.py
-│   ├── index.py
-│   └── llm.py
-│
-├── scripts/
-│   ├── build_corpus.py
-│   └── query.py
-│
-├── data/               # generated locally (ignored in git)
-├── venv/               # virtual environment (ignored)
-├── .gitignore
-├── README.md
-└── requirements.txt
-```
----
-
-## SETUP
+## Setup (Linux / macOS / Windows)
 ```bash
 python -m venv venv
-venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env            # then put your GEMINI_API_KEY in .env
 ```
----
 
-## Set Gemini API key (Windows):
+## Run
 ```bash
-setx GEMINI_API_KEY "your_api_key_here"
+python -m scripts.build_corpus --max-docs 300   # build index (omit flag for all docs)
+python -m scripts.query                         # interactive Q&A
+python -m pytest                                # tests
 ```
----
-## ▶️ Run
-Build the vector index:
-```bash
-python -m scripts.build_corpus
+
+## Layout
+```text
+app/        config, data_loader, cleaner, chunker, embedder, index, retriever, llm
+scripts/    build_corpus.py, query.py
+tests/      unit tests
+data/       generated index + chunks (git-ignored)
 ```
-Start the Q&A system:
-```bash
-python -m scripts.query
-```
----
+
+## Status
+- [x] Retrieval pipeline with chunk metadata and citations
+- [ ] FastAPI service (`/query`, `/health`)
+- [ ] Evaluation (hit@k, latency)
+- [ ] Docker + AWS deployment, CI/CD

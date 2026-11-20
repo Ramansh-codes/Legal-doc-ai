@@ -1,41 +1,26 @@
-from app.embedder import Embedder
-from app.index import VectorIndex
 from app.llm import generate_answer
-import json
+from app.retriever import Retriever
 
 
 def main():
-    # 🔹 Load chunks
-    with open("data/chunks.json", "r", encoding="utf-8") as f:
-        all_chunks = json.load(f)
-
-    # 🔹 Load FAISS index from file
-    index = VectorIndex(path="data/legal.index")
-
-    # 🔹 Embedder for question
-    embedder = Embedder()
-
+    retriever = Retriever()
     print("Legal Q&A system ready. Type 'exit' to quit.")
 
     while True:
         question = input("\nAsk: ").strip()
         if question.lower() in ("exit", "quit"):
             break
+        if not question:
+            continue
 
-        # 🔹 Embed question
-        q_vec = embedder.embed([question])
-
-        # 🔹 Search in FAISS
-        _, ids = index.search(q_vec, k=3)
-
-        # ❗ FIX: ids is 2D array
-        retrieved_chunks = [all_chunks[i] for i in ids[0]]
-
-        # 🔹 Ask LLM
-        answer = generate_answer(question, retrieved_chunks)
+        chunks = retriever.retrieve(question)
+        answer = generate_answer(question, chunks)
 
         print("\nAnswer:\n")
         print(answer)
+        print("\nSources:")
+        for n, c in enumerate(chunks, 1):
+            print(f"  [{n}] doc {c['doc_id']} chunk {c['chunk_id']} (score {c['score']:.3f})")
 
 
 if __name__ == "__main__":
