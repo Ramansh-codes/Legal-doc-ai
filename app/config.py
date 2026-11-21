@@ -17,3 +17,13 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "350"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
 TOP_K = int(os.getenv("TOP_K", "4"))
+
+LLM_BACKEND = os.getenv("LLM_BACKEND", "gemini")
+# Retrieval score below which we skip the LLM and answer "not found".
+# 0.0 = disabled. Tune it with the evaluation set (Nov 23).
+MIN_SCORE = float(os.getenv("MIN_SCORE", "0.0"))
+ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    if o.strip()
+]

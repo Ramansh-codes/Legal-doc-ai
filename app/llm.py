@@ -10,7 +10,7 @@ def _get_model():
     global _model
     if _model is None:
         if not config.GEMINI_API_KEY:
-            raise RuntimeError("GEMINI_API_KEY is not set (see .env.example).")
+            raise RuntimeError("GEMINI_API_KEY is not set (put it in .env).")
         import google.generativeai as genai
 
         genai.configure(api_key=config.GEMINI_API_KEY)
@@ -37,6 +37,20 @@ Answer:
 """
 
 
+def _gemini_generate(prompt):
+    return _get_model().generate_content(prompt).text.strip()
+
+
+# To add another backend (e.g. a self-hosted open model), write a function
+# prompt -> str and register it here, then set LLM_BACKEND in the environment.
+BACKENDS = {"gemini": _gemini_generate}
+
+
 def generate_answer(question, chunks):
-    response = _get_model().generate_content(build_prompt(question, chunks))
-    return response.text.strip()
+    try:
+        backend = BACKENDS[config.LLM_BACKEND]
+    except KeyError:
+        raise RuntimeError(
+            f"Unknown LLM_BACKEND '{config.LLM_BACKEND}'. Options: {list(BACKENDS)}"
+        )
+    return backend(build_prompt(question, chunks))
