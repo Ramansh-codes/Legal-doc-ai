@@ -28,3 +28,7 @@ Thumbs.db
 notebooks/
 
 offload/  
+
+#data
+data/
+.pytest_cache/
